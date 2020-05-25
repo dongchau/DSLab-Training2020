@@ -1,6 +1,10 @@
+from collections import defaultdict
 from sklearn.cluster import KMeans
 from scipy.sparse import csr_matrix
 import numpy as np
+from sklearn import metrics
+
+NUM_OF_CLUSTER = 20
 
 
 def load_data(data_path, vocab_path):
@@ -43,11 +47,10 @@ def load_data(data_path, vocab_path):
     return data, labels
 
 
-def clustering_with_kmean(data_path, vocab_path):
-    data, labels = load_data(data_path, vocab_path)
+def clustering_with_kmean(data):
     X = csr_matrix(data)
     kmeans = KMeans(
-        n_clusters=20,
+        n_clusters=NUM_OF_CLUSTER,
         init='random',
         n_init=5,  # number of time that kmean runs with differently initialized centroids
         tol=1e-3,  # threshold to acceptable minimum error decrease
@@ -56,16 +59,23 @@ def clustering_with_kmean(data_path, vocab_path):
     clustering_labels = kmeans.labels_
     return clustering_labels
 
-#
-# def compute_purity(labels):
-#     majority_sum = 0
-#     for cluster in self._clusters:
-#         member_labels = [member.get_label() for member in cluster.get_members()]
-#         max_count = max([member_labels.count(label) for label in range(20)])
-#         majority_sum += max_count
-#     return majority_sum * 1.0 / len(self._data)
+
+def compute_purity(clustering_labels, ground_truth_labels):
+    contingency_matrix = metrics.cluster.contingency_matrix(ground_truth_labels, clustering_labels)
+    return np.sum(np.amax(contingency_matrix, axis=0)) / np.sum(contingency_matrix)
 
 
-data_path = "G:/Project/python/DSLab Training 2020/datasets/20news-bydate/data_tf_idf.txt"
-vocab_path = "G:/Project/python/DSLab Training 2020/datasets/20news-bydate/words_idfs.txt"
-print(clustering_with_kmean(data_path, vocab_path))
+def compute_NMI(clusterring_labels, ground_truth_labels):
+    """
+    Calculate NMI value
+    :return: NMI value
+    """
+    return metrics.normalized_mutual_info_score(ground_truth_labels, clusterring_labels)
+
+
+data_path = "G:/Project/python/DSLab Training 2020/datasets/20news-bydate/train_tf_idf.txt "
+vocab_path = "G:/Project/python/DSLab Training 2020/datasets/20news-bydate/words_idfs.txt "
+data, labels = load_data(data_path, vocab_path)
+result = clustering_with_kmean(data)
+print("Purity: ", compute_purity(result, labels))
+print("NMI: ", compute_NMI(result, labels))
