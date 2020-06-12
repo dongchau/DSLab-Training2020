@@ -6,15 +6,15 @@ import re
 def gen_data_and_vocab():
     """
 
-    :return:
+    :return: write data to file
     """
     def collect_data(parent_path, newsgroup_list, word_count=None):
         """
-        Get content of all files in dataset by each newsgroup list
+        Get content of all files in dataset by each newsgroup in newsgroup list
         :param parent_path: string representing path of dataset folder
         :param newsgroup_list: list of string representing title of newsgroup
         :param word_count: dictionary store the number of each word in vocabulary
-        :return:
+        :return: a list of string, each string representing filename and content of file
         """
         data = []
         for group_id, newsgroup in enumerate(newsgroup_list):
@@ -55,8 +55,8 @@ def gen_data_and_vocab():
         newsgroup_list=newsgroup_list,
         word_count=word_count
     )
-    vocab = [word for word, freq in
-             zip(word_count.keys(), word_count.values()) if freq > 10]
+    # create vocabulary contains words which appear more than 10 times in training data
+    vocab = [word for word, freq in zip(word_count.keys(), word_count.values()) if freq > 10]
     vocab.sort()
     with open('../datasets/w2v/vocab-raw.txt', 'w') as f:
         f.write('\n'.join(vocab))
@@ -72,14 +72,23 @@ def gen_data_and_vocab():
 
 
 def encode_data(data_path, vocab_path, MAX_DOC_LENGTH=500):
-    unknown_id = 0
-    padding_id = 1
+    """
+    Encode data
+    :param data_path: string representing path to data folder
+    :param vocab_path: string representing path to vocabulary file
+    :param MAX_DOC_LENGTH: Length of output vector, each vector
+                           representing content of one file
+    :return:
+    """
+    unknown_id = 0  # word isn't in vocabulary
+    padding_id = 1  # padding value for dimension with no value
     with open(vocab_path) as f:
-        vocab = dict([(word, word_id + 2) for word_id, word in enumerate(f.readlines())])
+        vocab = dict([(word, word_id + 2) for word_id, word in enumerate(f.read().splitlines())])
     with open(data_path) as f:
         documents = [(line.split('<fff>')[0], line.split('<fff>')[1], line.split('<fff>')[2])
-                     for line in f.readlines()]
+                     for line in f.read().splitlines()]
     encoded_data = []
+    # encode data by replacing word with it's ID
     for document in documents:
         label, doc_id, text = document
         words = text.split()[:MAX_DOC_LENGTH]
