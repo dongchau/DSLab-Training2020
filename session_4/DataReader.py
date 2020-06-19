@@ -42,6 +42,7 @@ class DataReader:
         # create a batch
         if end + self.batch_size > len(self.data):
             end = len(self.data)
+            start = end - self.batch_size
             self.num_epoch += 1
             self.batch_id = 0
             indices = list(range(len(self.data)))
